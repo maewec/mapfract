@@ -54,6 +54,7 @@ class Toolbar:
         self.frame.grid(row=row, column=column, sticky='nw',
                         padx=padx, pady=pady)
 
+        ##################
         # Фрейм информации
         self.frame_info = tk.LabelFrame(self.frame, text='Информация')
         self.frame_info.grid(row=0, column=0, sticky='nw',
@@ -67,6 +68,7 @@ class Toolbar:
         self.label_info_len = tk.Label(self.frame_info, text='')
         self.label_info_len.grid(row=1, column=0)
         
+        ################
         # Фрейм масштаба
         self.frame_scale = tk.LabelFrame(self.frame, text='Масштаб')
         self.frame_scale.grid(row=0, column=1, sticky='nsw',
@@ -74,11 +76,13 @@ class Toolbar:
         # поле ввода количества пикселей
         self.entry_scale_pixels = tk.Entry(self.frame_scale, width=8)
         self.entry_scale_pixels.insert(0, 1)
+        self.entry_scale_pixels.bind('<Return>', lambda event: self.get_multiplier())
         self.entry_scale_pixels.grid(row=0, column=0)
         tk.Label(self.frame_scale, text='px').grid(row=0, column=1)
         # поле ввода единиц длины
         self.entry_scale_len = tk.Entry(self.frame_scale, width=8)
         self.entry_scale_len.insert(0, 1)
+        self.entry_scale_len.bind('<Return>', lambda event: self.get_multiplier())
         self.entry_scale_len.grid(row=1, column=0)
         tk.Label(self.frame_scale, text='').grid(row=1, column=1)
         # кнопка определения числа пикселей
@@ -90,6 +94,16 @@ class Toolbar:
         # вывод перевода пикселей в длину
         self.label_scale = tk.Label(self.frame_scale)
         self.label_scale.grid(row=3, column=0, columnspan=2)
+
+        #################
+        # Фрейм измерений
+        self.frame_measure = tk.LabelFrame(self.frame, text='Измерения')
+        self.frame_measure.grid(row=0, column=2, sticky='nsw',
+                              padx=padx, pady=pady)
+        self.button_measure_line = tk.Button(self.frame_measure, text='Измерить длину')
+        self.button_measure_line.bind('<Button-1>',
+                                      lambda event: self.measure('draw_distance'))
+        self.button_measure_line.grid(row=0, column=0, sticky='nw')
 
     def info_coord(self, event):
         # при скроллинге канваса правильное отображение координат
@@ -159,17 +173,17 @@ class Toolbar:
         if type_measure == 'draw_distance':
             multiplier = self.get_multiplier()
             l = px*multiplier
-            text = '{:5.0f} px\n{:5.2e} ед.дл.'.format(px, l)
+            text = '{:5.0f} px\n{:.4f}'.format(px, l)
             self.label_info_len.configure(text=text)
         elif type_measure == 'scale':
-            text = '{:5.0f} px'.format(px)
+            text = '{:.0f} px'.format(px)
             self.label_info_len.configure(text=text)
 
     def get_multiplier(self):
         pixels = int(self.entry_scale_pixels.get())
         length = float(self.entry_scale_len.get())
         multiplier = length / pixels
-        self.label_scale.configure(text=f'1 px = {multiplier:5.2e}')
+        self.label_scale.configure(text=f'1 px = {multiplier:.4f}')
         return multiplier
 
 class ImageFrame:
