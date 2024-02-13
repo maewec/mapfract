@@ -165,7 +165,6 @@ class Toolbar:
             self.entry_rotate_angle.insert(0, '{:6.2f}'.format(angle))
         else:
             px = math.sqrt((x2-x1)**2+(y2-y1)**2)
-            px = round(px)
             multiplier = self.get_multiplier()
             length = px*multiplier
             if type_measure == 'scale':
@@ -174,7 +173,7 @@ class Toolbar:
                 self.entry_scale_pixels.insert(0, px)
             elif type_measure == 'draw_distance':
                 # переношу результаты в поле результатов
-                self.result.add_result(length, px, self.line)
+                self.result.add_result(length, round(px), self.line)
             else:
                 raise KeyError(f'Ключ {type_measure} не поддерживается')
 
@@ -264,14 +263,16 @@ class MeasureFrame:
         self.color_var = tk.StringVar(value=COLORS[self.color_id])
         self.view_length_var = tk.StringVar(value=self.view_length[0])
         self.var_visible = tk.BooleanVar()
+        # рисую на линии ее длину
+        self.line.visible_length('{:.4f}'.format(self.length))
 
-    view_length = ['Длина', 'px', 'Нет']
+    view_length = ['Длина', 'id', 'px', 'Нет']
 
     def draw(self):
         self.row = tk.Frame(self.master)
         self.row.grid(row=self.id, column=0)
         # номер результата
-        self.label_num = tk.Label(self.row, text='{:2.0f}'.format(self.id))
+        self.label_num = tk.Label(self.row, text='{:2.0f}'.format(self.id), width=2)
         self.label_num.grid(row=0, column=0)
         # Чекбокс видимости
         self.var_visible.set(True)
@@ -297,6 +298,7 @@ class MeasureFrame:
         self.combobox_length = ttk.Combobox(self.row, textvariable=self.view_length_var,
                 values=self.view_length, width=4, state='readonly')
         self.combobox_length.grid(row=0, column=5)
+        self.combobox_length.bind('<<ComboboxSelected>>', lambda event: self.visible_length())
 
     def select_color(self, color_id):
         self.color_id = color_id
@@ -305,6 +307,22 @@ class MeasureFrame:
 
     def visible(self):
         self.line.visible(self.var_visible.get())
+
+    def visible_length(self):
+        selection = self.combobox_length.get()
+        if selection == 'Нет':
+            self.line.length_hidden()
+        else:
+            if selection == 'Длина':
+                value = '{:.4f}'.format(self.length)
+            elif selection == 'id':
+                value = '{:.0f}'.format(self.id)
+            elif selection == 'px':
+                value = '{:.0f}'.format(self.pixel)
+            else:
+                value = 'Error'
+            self.line.visible_length(value)
+
 
 class Line:
     def __init__(self, canvas, x, y, color_id=0, width=3):
@@ -315,8 +333,22 @@ class Line:
         self.y = y
         self.x1 = x + 1
         self.y1 = y + 1
-        self.id = canvas.create_line(self.x, self.y, self.x1, self.y1,
+        self.id = self.canvas.create_line(self.x, self.y, self.x1, self.y1,
                 fill=COLORS[self.color_id], width=self.width)
+        # бронирую id для текста
+        x, y = self.middle()
+        self.id_text = self.canvas.create_text(x, y, text='0', fill='white', tag='text')
+        # границы текста
+        bounds_text = self.canvas.bbox(self.id_text)
+        self.canvas.itemconfig(self.id_text, state='hidden')
+        # бронирую id для рамки текста
+        self.id_rect = self.canvas.create_rectangle(*bounds_text, fill='black', tag='rect')
+        self.canvas.itemconfig(self.id_rect, state='hidden')
+
+    def middle(self):
+        x = int((self.x + self.x1) / 2)
+        y = int((self.y + self.y1) / 2)
+        return x, y
 
     def delete(self):
         self.canvas.delete(self.id)
@@ -326,7 +358,9 @@ class Line:
         self.y = y
         self.x1 = x1
         self.y1 = y1
-        self.canvas.coords(self.id, (x, y, x1, y1))
+        xm, ym = self.middle()
+        self.canvas.coords(self.id, (self.x, self.y, self.x1, self.y1))
+        self.canvas.coords(self.id_text, (xm, ym))
 
     def set_color(self, color_id):
         self.color_id = color_id
@@ -335,8 +369,24 @@ class Line:
     def visible(self, key):
         if key:
             self.canvas.itemconfig(self.id, state='normal')
+            self.canvas.itemconfig(self.id_text, state='normal')
+            self.canvas.itemconfig(self.id_rect, state='normal')
         else:
             self.canvas.itemconfig(self.id, state='hidden')
+            self.canvas.itemconfig(self.id_text, state='hidden')
+            self.canvas.itemconfig(self.id_rect, state='hidden')
+
+    def visible_length(self, value):
+        self.canvas.itemconfig(self.id_text, state='normal')
+        self.canvas.itemconfig(self.id_text, text=value)
+        bounds_text = self.canvas.bbox(self.id_text)
+        self.canvas.itemconfig(self.id_rect, state='normal')
+        self.canvas.coords(self.id_rect, bounds_text)
+        self.canvas.tag_raise('text')
+
+    def length_hidden(self):
+        self.canvas.itemconfig(self.id_text, state='hidden')
+        self.canvas.itemconfig(self.id_rect, state='hidden')
 
 
 
