@@ -3,6 +3,7 @@ import sys, os
 import math
 
 import tkinter as tk
+from tkinter import ttk
 import tkinter.filedialog as fd
 import tkinter.messagebox as mb
 
@@ -22,6 +23,10 @@ root.title(title_name)
 #    pass
 
 global img
+
+COLORS = ['#FF0000', '#000000', '#FFFFFF',
+          '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
+          '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
 
 def loadfile():
     file_name = fd.askopenfilename()
@@ -238,7 +243,7 @@ class ResultFrame:
         self.frame_result = tk.LabelFrame(self.frame, text='Результаты')
         self.frame_result.grid(row=0, column=0, sticky='nw',
                                padx=2, pady=3)
-        tk.Label(self.frame_result, text='N, check, length').grid(row=0, column=0)
+        tk.Label(self.frame_result, text='N, check, length', anchor='w').grid(row=0, column=0)
 
     def add_result(self, length, pixel, line):
         res = MeasureFrame(length, pixel, line, self.frame_result)
@@ -257,6 +262,9 @@ class MeasureFrame:
         self.line = line
         self.master = master
 
+    view_length = ['Длина', 'px', 'Нет']
+    view_length_var = tk.StringVar(value=view_length[0])
+
     def draw(self):
         self.row = tk.Frame(self.master)
         self.row.grid(row=self.id, column=0)
@@ -269,9 +277,23 @@ class MeasureFrame:
         self.check_visible = tk.Checkbutton(self.row, text='',
                 variable=self.var_visible, onvalue=True, offvalue=False)
         self.check_visible.grid(row=0, column=1)
-
-        print(self.id, '-', self.length, '-', self.pixel)
-
+        # Текст с длиной
+        self.text_length = tk.Text(self.row, width=10, height=1, wrap='none', bg='#cccccc')
+        self.text_length.grid(row=0, column=2)
+        self.text_length.insert(1.0, '{:.4f}'.format(self.length))
+        self.text_length.configure(state='disabled')
+        # Текст с пикселями
+        self.text_px = tk.Text(self.row, width=5, height=1, wrap='none', bg='#cccccc')
+        self.text_px.grid(row=0, column=3)
+        self.text_px.insert(1.0, '{:.0f}'.format(self.pixel))
+        self.text_px.configure(state='disabled')
+        # Цвет
+        self.label_color = tk.Label(self.row, width=2, bg=self.color)
+        self.label_color.grid(row=0, column=4)
+        # Отображение размера на полотне
+        self.combobox_length = ttk.Combobox(self.row, textvariable=self.view_length_var,
+                values=self.view_length, width=4)
+        self.combobox_length.grid(row=0, column=5)
 
 
 mainmenu = tk.Menu(root)
