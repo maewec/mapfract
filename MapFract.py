@@ -276,7 +276,8 @@ class MeasureFrame:
         # Чекбокс видимости
         self.var_visible.set(True)
         self.check_visible = tk.Checkbutton(self.row, text='',
-                variable=self.var_visible, onvalue=True, offvalue=False)
+                variable=self.var_visible, onvalue=True, offvalue=False,
+                command=self.visible)
         self.check_visible.grid(row=0, column=1)
         # Текст с длиной
         self.text_length = tk.Text(self.row, width=10, height=1, wrap='none', bg='#cccccc')
@@ -302,6 +303,8 @@ class MeasureFrame:
         self.label_color.configure(background=COLORS[self.color_id])
         self.line.set_color(color_id)
 
+    def visible(self):
+        self.line.visible(self.var_visible.get())
 
 class Line:
     def __init__(self, canvas, x, y, color_id=0, width=3):
@@ -328,6 +331,12 @@ class Line:
     def set_color(self, color_id):
         self.color_id = color_id
         self.canvas.itemconfig(self.id, fill=COLORS[color_id])
+
+    def visible(self, key):
+        if key:
+            self.canvas.itemconfig(self.id, state='normal')
+        else:
+            self.canvas.itemconfig(self.id, state='hidden')
 
 
 
