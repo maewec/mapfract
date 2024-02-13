@@ -131,8 +131,7 @@ class Toolbar:
             y = self.imgf.canv.canvasy(event.y)
             self.list_points_measure.append([x, y])
             # создание линии
-            self.line = self.imgf.canv.create_line(x, y, x+1, y+1,
-                                              fill=COLORS[0], width=3)
+            self.line = Line(self.imgf.canv, x, y, color_id=0, width=3)
             self.canv_bind_line = self.imgf.canv.bind('<Motion>',
                         lambda event: self.draw_line(event, x, y, type_measure),
                                      add=True)
@@ -142,7 +141,7 @@ class Toolbar:
             self.canv_bind_info_coord = self.imgf.canv.bind('<Motion>', self.info_coord,
                                                    add=True)
             if type_measure != 'draw_distance':
-                self.imgf.canv.delete(self.line)
+                self.line.delete()
             x = self.imgf.canv.canvasx(event.x)
             y = self.imgf.canv.canvasy(event.y)
             self.list_points_measure.append([x, y])
@@ -182,7 +181,7 @@ class Toolbar:
     def draw_line(self, event, x, y, type_measure):
         x1 = self.imgf.canv.canvasx(event.x)
         y1 = self.imgf.canv.canvasy(event.y)
-        self.imgf.canv.coords(self.line, (x, y, x1, y1))
+        self.line.new_coords(x, y, x1, y1)
         px = math.sqrt((x-x1)**2+(y-y1)**2)
         if type_measure == 'draw_distance':
             multiplier = self.get_multiplier()
@@ -301,8 +300,35 @@ class MeasureFrame:
     def select_color(self, color_id):
         self.color_id = color_id
         self.label_color.configure(background=COLORS[self.color_id])
-        # обращаюсь к глобальной переменной холста
-        image_frame.canv.itemconfig(self.line, fill=COLORS[self.color_id])
+        self.line.set_color(color_id)
+
+
+class Line:
+    def __init__(self, canvas, x, y, color_id=0, width=3):
+        self.color_id = color_id
+        self.width = width
+        self.canvas = canvas
+        self.x = x
+        self.y = y
+        self.x1 = x + 1
+        self.y1 = y + 1
+        self.id = canvas.create_line(self.x, self.y, self.x1, self.y1,
+                fill=COLORS[self.color_id], width=self.width)
+
+    def delete(self):
+        self.canvas.delete(self.id)
+
+    def new_coords(self, x, y, x1, y1):
+        self.x = x
+        self.y = y
+        self.x1 = x1
+        self.y1 = y1
+        self.canvas.coords(self.id, (x, y, x1, y1))
+
+    def set_color(self, color_id):
+        self.color_id = color_id
+        self.canvas.itemconfig(self.id, fill=COLORS[color_id])
+
 
 
 mainmenu = tk.Menu(root)
