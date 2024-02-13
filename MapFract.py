@@ -9,7 +9,7 @@ import tkinter.messagebox as mb
 
 from PIL import ImageTk
 
-import image
+import image, color_panel
 
 
 title_name = 'Map Fracture'
@@ -24,7 +24,7 @@ root.title(title_name)
 
 global img
 
-COLORS = ['#FF0000', '#000000', '#FFFFFF',
+COLORS = ['#FF0000', '#00FF00', '#0000FF', '#000000', '#FFFFFF',
           '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
           '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
 
@@ -256,14 +256,16 @@ class MeasureFrame:
     def __init__(self, length, pixel, line, master):
         self.id = MeasureFrame.count
         MeasureFrame.count += 1
-        self.color = 'red'
         self.length = length
         self.pixel = pixel
         self.line = line
         self.master = master
+        self.color_id = 0
+        self.color_var = tk.StringVar(value=COLORS[self.color_id])
+        self.view_length_var = tk.StringVar(value=self.view_length[0])
+        self.var_visible = tk.BooleanVar()
 
     view_length = ['Длина', 'px', 'Нет']
-    view_length_var = tk.StringVar(value=view_length[0])
 
     def draw(self):
         self.row = tk.Frame(self.master)
@@ -272,7 +274,6 @@ class MeasureFrame:
         self.label_num = tk.Label(self.row, text='{:2.0f}'.format(self.id))
         self.label_num.grid(row=0, column=0)
         # Чекбокс видимости
-        self.var_visible = tk.BooleanVar(self.row)
         self.var_visible.set(True)
         self.check_visible = tk.Checkbutton(self.row, text='',
                 variable=self.var_visible, onvalue=True, offvalue=False)
@@ -288,12 +289,17 @@ class MeasureFrame:
         self.text_px.insert(1.0, '{:.0f}'.format(self.pixel))
         self.text_px.configure(state='disabled')
         # Цвет
-        self.label_color = tk.Label(self.row, width=2, bg=self.color)
+        self.label_color = tk.Label(self.row, width=2, background=COLORS[self.color_id])
         self.label_color.grid(row=0, column=4)
+        self.label_color.bind('<Button-1>', lambda event: color_panel.SelectColor(COLORS, self))
         # Отображение размера на полотне
         self.combobox_length = ttk.Combobox(self.row, textvariable=self.view_length_var,
-                values=self.view_length, width=4)
+                values=self.view_length, width=4, state='readonly')
         self.combobox_length.grid(row=0, column=5)
+
+    def select_color(self, color_id):
+        self.color_id = color_id
+        self.label_color.configure(background=COLORS[self.color_id])
 
 
 mainmenu = tk.Menu(root)
