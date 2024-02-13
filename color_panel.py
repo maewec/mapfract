@@ -7,7 +7,7 @@ COLORS = ['#FF0000', '#00FF00', '#0000FF', '#000000', '#FFFFFF',
 
 
 class SelectColor:
-    def __init__(self, colors, obj_measure_frame=None, main=False):
+    def __init__(self, colors, obj_measure_frame=None, event=None, main=False):
         if main:
             self.window = tk.Tk()
         else:
@@ -32,6 +32,12 @@ class SelectColor:
             box_color = BoxColor(i, self, row, column, self.colors[i])
             self.list_box_color.append(box_color)
 
+        # позиционирую окно
+        if event != None:
+            x = int(event.x_root)
+            y = int(event.y_root)
+            self.window.geometry('+{}+{}'.format(x, y))
+
         self.window.mainloop()
 
 
@@ -44,15 +50,17 @@ class BoxColor:
         self.color = color
         self.master = self.obj_select_color.window
         self.box_color = tk.Label(self.master, width=2, background=color,
-                anchor='nw',
-                text='{:.0f}, {:.0f}'.format(row, column))
+                anchor='nw')
         self.box_color.grid(row=self.row, column=self.column)
         self.box_color.bind('<Button-1>', lambda event: self.event())
 
     def event(self):
         color_id = self.id
         # записываю новый цвет 
-        self.obj_select_color.obj_measure_frame.select_color(color_id)
+        if self.obj_select_color.obj_measure_frame != None:
+            self.obj_select_color.obj_measure_frame.select_color(color_id)
+        else:
+            print(color_id)
         # и уничтожаю окно
         self.master.destroy()
 

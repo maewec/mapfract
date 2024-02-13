@@ -130,8 +130,9 @@ class Toolbar:
             x = self.imgf.canv.canvasx(event.x)
             y = self.imgf.canv.canvasy(event.y)
             self.list_points_measure.append([x, y])
+            # создание линии
             self.line = self.imgf.canv.create_line(x, y, x+1, y+1,
-                                              fill='red', width=3)
+                                              fill=COLORS[0], width=3)
             self.canv_bind_line = self.imgf.canv.bind('<Motion>',
                         lambda event: self.draw_line(event, x, y, type_measure),
                                      add=True)
@@ -291,7 +292,7 @@ class MeasureFrame:
         # Цвет
         self.label_color = tk.Label(self.row, width=2, background=COLORS[self.color_id])
         self.label_color.grid(row=0, column=4)
-        self.label_color.bind('<Button-1>', lambda event: color_panel.SelectColor(COLORS, self))
+        self.label_color.bind('<Button-1>', lambda event: color_panel.SelectColor(COLORS, self, event))
         # Отображение размера на полотне
         self.combobox_length = ttk.Combobox(self.row, textvariable=self.view_length_var,
                 values=self.view_length, width=4, state='readonly')
@@ -300,6 +301,8 @@ class MeasureFrame:
     def select_color(self, color_id):
         self.color_id = color_id
         self.label_color.configure(background=COLORS[self.color_id])
+        # обращаюсь к глобальной переменной холста
+        image_frame.canv.itemconfig(self.line, fill=COLORS[self.color_id])
 
 
 mainmenu = tk.Menu(root)
