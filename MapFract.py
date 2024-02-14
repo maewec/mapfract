@@ -263,16 +263,34 @@ class ResultFrame:
         self.frame = tk.Frame(master)
         self.frame.grid(row=row, column=column, sticky='nw',
                         padx=3, pady=3)
+        self.width = 279
+        self.height = 45
+        # добавляю канвас, чтобы потом можно было реализовать прокрутку
+        self.canvas_result = tk.Canvas(self.frame)
+        self.canvas_result.grid(row=0, column=0, sticky='nw')
+        self.canvas_result.configure(width=self.width)
+        self.canvas_result.configure(height=self.height)
+        self.vscroll = tk.Scrollbar(self.frame, orient='vertical',
+                command=self.canvas_result.yview)
+        self.canvas_result.config(yscrollcommand=self.vscroll.set)
+        self.vscroll.grid(row=0, column=1, sticky='ns')
 
-        self.frame_result = tk.LabelFrame(self.frame, text='Результаты')
-        self.frame_result.grid(row=0, column=0, sticky='nw',
-                               padx=2, pady=3)
-        #tk.Label(self.frame_result, text='', anchor='w').grid(row=0, column=0)
+        self.frame_result = tk.LabelFrame(self.canvas_result, text='Результаты')
+        self.canvas_result.create_window((0,0), window=self.frame_result, anchor='nw')
 
     def add_result(self, length, pixel, line):
         res = MeasureFrame(length, pixel, line, self.frame_result, self)
         res.draw()
         self.list_result.append(res)
+        self.update_canvas()
+
+    def update_canvas(self):
+        self.frame_result.update()
+        self.width = self.frame_result.winfo_width()
+        self.height = self.frame_result.winfo_height()
+        self.canvas_result.configure(height=self.height)
+        self.canvas_result.configure(width=self.width)
+        self.canvas_result.configure(scrollregion=(0, 0, self.width, self.height))
 
 
 class MeasureFrame:
@@ -365,6 +383,8 @@ class MeasureFrame:
         self.line.delete()
         # разрушение фрейма с результатами
         self.row.destroy()
+        # пересчитываю размеры поля canvas
+        self.obj_resultframe.update_canvas()
 
 
 class Line:
