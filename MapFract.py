@@ -11,15 +11,18 @@ from PIL import ImageTk
 
 import image, color_panel, about
 
-
-title_name = 'Map Fracture'
+__version__ = '1.0'
+title_name = 'Map Fracture' + ' ' + __version__
 
 root = tk. Tk()
 root.title(title_name)
 
-if sys.platform.startswith('win'):
-    root.iconbitmap('mapfract.ico')
-else:
+try:
+    base_path = sys._MEIPASS
+    print(base_path)
+    full_path = os.path.join(base_path, 'data_file', 'mapfract.ico')
+    root.iconbitmap(full_path)
+except:
     pass
 
 global img
