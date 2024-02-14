@@ -270,14 +270,14 @@ class ResultFrame:
         #tk.Label(self.frame_result, text='', anchor='w').grid(row=0, column=0)
 
     def add_result(self, length, pixel, line):
-        res = MeasureFrame(length, pixel, line, self.frame_result)
+        res = MeasureFrame(length, pixel, line, self.frame_result, self)
         res.draw()
         self.list_result.append(res)
 
 
 class MeasureFrame:
     count = 1
-    def __init__(self, length, pixel, line, master):
+    def __init__(self, length, pixel, line, master, obj_resultframe):
         self.id = MeasureFrame.count
         MeasureFrame.count += 1
         self.length = length
@@ -288,42 +288,48 @@ class MeasureFrame:
         self.color_var = tk.StringVar(value=COLORS[self.color_id])
         self.view_length_var = tk.StringVar(value=self.view_length[0])
         self.var_visible = tk.BooleanVar()
+        self.obj_resultframe = obj_resultframe
         # рисую на линии ее длину
         self.line.visible_length('{:.4f}'.format(self.length))
 
     view_length = ['Длина', 'id', 'px', 'Нет']
 
     def draw(self):
+        padx = 1
         self.row = tk.Frame(self.master)
         self.row.grid(row=self.id, column=0)
         # номер результата
         self.label_num = tk.Label(self.row, text='{:2.0f}'.format(self.id), width=2)
-        self.label_num.grid(row=0, column=0)
+        self.label_num.grid(row=0, column=0, padx=padx)
         # Чекбокс видимости
         self.var_visible.set(True)
         self.check_visible = tk.Checkbutton(self.row, text='',
                 variable=self.var_visible, onvalue=True, offvalue=False,
                 command=self.visible)
-        self.check_visible.grid(row=0, column=1)
+        self.check_visible.grid(row=0, column=1, padx=padx)
         # Текст с длиной
         self.text_length = tk.Text(self.row, width=10, height=1, wrap='none', bg='#cccccc')
-        self.text_length.grid(row=0, column=2)
+        self.text_length.grid(row=0, column=2, padx=padx)
         self.text_length.insert(1.0, '{:.4f}'.format(self.length))
         self.text_length.configure(state='disabled')
         # Текст с пикселями
         self.text_px = tk.Text(self.row, width=5, height=1, wrap='none', bg='#cccccc')
-        self.text_px.grid(row=0, column=3)
+        self.text_px.grid(row=0, column=3, padx=padx)
         self.text_px.insert(1.0, '{:.0f}'.format(self.pixel))
         self.text_px.configure(state='disabled')
         # Цвет
         self.label_color = tk.Label(self.row, width=2, background=COLORS[self.color_id])
-        self.label_color.grid(row=0, column=4)
+        self.label_color.grid(row=0, column=4, padx=padx)
         self.label_color.bind('<Button-1>', lambda event: color_panel.SelectColor(COLORS, self, event))
         # Отображение размера на полотне
         self.combobox_length = ttk.Combobox(self.row, textvariable=self.view_length_var,
                 values=self.view_length, width=4, state='readonly')
-        self.combobox_length.grid(row=0, column=5)
+        self.combobox_length.grid(row=0, column=5, padx=padx)
         self.combobox_length.bind('<<ComboboxSelected>>', lambda event: self.visible_length())
+        # Удаление измерения
+        self.button_delete = tk.Button(self.row, text='X')
+        self.button_delete.grid(row=0, column=6, padx=padx)
+        self.button_delete.bind('<Button-1>', lambda event: self.delete())
 
     def select_color(self, color_id):
         self.color_id = color_id
@@ -347,6 +353,18 @@ class MeasureFrame:
             else:
                 value = 'Error'
             self.line.visible_length(value)
+
+    def delete(self):
+        # удаление из списка данного элемента
+        list_result = self.obj_resultframe.list_result
+        for res in list_result:
+            if res.id == self.id:
+                list_result.remove(res)
+                break
+        # удаление линии с канваса
+        self.line.delete()
+        # разрушение фрейма с результатами
+        self.row.destroy()
 
 
 class Line:
@@ -385,6 +403,8 @@ class Line:
 
     def delete(self):
         self.canvas.delete(self.id)
+        self.canvas.delete(self.id_text)
+        self.canvas.delete(self.id_rect)
 
     def new_coords(self, x, y, x1, y1):
         self.x = x
