@@ -40,9 +40,17 @@ def loadfile():
             img = image.ImagePIL(file_name)
             # отображение изображения
             image_frame.reload_image()
-            #image_frame.unlock()
+            # разблокировка сохранения
+            mainmenu.entryconfig('Сохранить изображение', state='normal')
         except Exception as e:
             mb.showerror('Ошибка', f'Не удалось открыть файл\n{e}')
+
+def savefile(image_frame):
+    ext = 'png'
+    new_short_file_wo_ext = short_file_wo_ext + '_mod'
+    new_name = new_short_file_wo_ext + '.' + ext
+    newfile = os.path.join(path, new_name)
+    img.savefile(newfile, result)
 
 
 class Toolbar:
@@ -242,7 +250,7 @@ class ResultFrame:
         self.frame_result = tk.LabelFrame(self.frame, text='Результаты')
         self.frame_result.grid(row=0, column=0, sticky='nw',
                                padx=2, pady=3)
-        tk.Label(self.frame_result, text='N, check, length', anchor='w').grid(row=0, column=0)
+        #tk.Label(self.frame_result, text='', anchor='w').grid(row=0, column=0)
 
     def add_result(self, length, pixel, line):
         res = MeasureFrame(length, pixel, line, self.frame_result)
@@ -327,6 +335,7 @@ class MeasureFrame:
 class Line:
     def __init__(self, canvas, x, y, color_id=0, width=3):
         self.color_id = color_id
+        self.color = COLORS[self.color_id]
         self.width = width
         self.canvas = canvas
         self.x = x
@@ -335,6 +344,11 @@ class Line:
         self.y1 = y + 1
         self.id = self.canvas.create_line(self.x, self.y, self.x1, self.y1,
                 fill=COLORS[self.color_id], width=self.width)
+        # видимость линии и текста
+        self.key_visible = True
+        # видимость текста
+        self.key_visible_length = False
+        self.text_length = ''
         # бронирую id для текста
         x, y = self.middle()
         self.id_text = self.canvas.create_text(x, y, text='0', fill='white', tag='text')
@@ -364,6 +378,7 @@ class Line:
 
     def set_color(self, color_id):
         self.color_id = color_id
+        self.color = COLORS[self.color_id]
         self.canvas.itemconfig(self.id, fill=COLORS[color_id])
 
     def visible(self, key):
@@ -371,33 +386,39 @@ class Line:
             self.canvas.itemconfig(self.id, state='normal')
             self.canvas.itemconfig(self.id_text, state='normal')
             self.canvas.itemconfig(self.id_rect, state='normal')
+            self.key_visible = True
         else:
             self.canvas.itemconfig(self.id, state='hidden')
             self.canvas.itemconfig(self.id_text, state='hidden')
             self.canvas.itemconfig(self.id_rect, state='hidden')
+            self.key_visible = False
 
     def visible_length(self, value):
         self.canvas.itemconfig(self.id_text, state='normal')
         self.canvas.itemconfig(self.id_text, text=value)
-        bounds_text = self.canvas.bbox(self.id_text)
+        self.bounds_text = self.canvas.bbox(self.id_text)
         self.canvas.itemconfig(self.id_rect, state='normal')
-        self.canvas.coords(self.id_rect, bounds_text)
+        self.canvas.coords(self.id_rect, self.bounds_text)
         self.canvas.tag_raise('text')
+        self.text_length = value
+        self.key_visible_length = True
 
     def length_hidden(self):
         self.canvas.itemconfig(self.id_text, state='hidden')
         self.canvas.itemconfig(self.id_rect, state='hidden')
+        self.key_visible_length = False
 
-
-
-mainmenu = tk.Menu(root)
-root.config(menu=mainmenu)
-mainmenu.add_command(label='Открыть изображение', command=loadfile)
 
 result      = ResultFrame(root, 1, 0)
 image_frame =  ImageFrame(root, 1, 1)
 toolbar     =     Toolbar(root, 0, 0, columnspan=2, 
                           image_frame=image_frame, result=result)
+
+mainmenu = tk.Menu(root)
+root.config(menu=mainmenu)
+mainmenu.add_command(label='Открыть изображение', command=loadfile)
+mainmenu.add_command(label='Сохранить изображение',
+                     command= lambda: savefile(result), state='disabled')
 
 root.grid_columnconfigure(1, weight=1)
 root.grid_rowconfigure(1, weight=1)
