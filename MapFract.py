@@ -9,7 +9,7 @@ import tkinter.messagebox as mb
 
 from PIL import ImageTk
 
-import image, color_panel
+import image, color_panel, about
 
 
 title_name = 'Map Fracture'
@@ -17,10 +17,10 @@ title_name = 'Map Fracture'
 root = tk. Tk()
 root.title(title_name)
 
-#if sys.platform.startswith('win'):
-#    root.iconbitmap('mapfract.ico')
-#else:
-#    pass
+if sys.platform.startswith('win'):
+    root.iconbitmap('mapfract.ico')
+else:
+    pass
 
 global img
 
@@ -496,6 +496,7 @@ mainmenu.add_command(label='Сохранить изображение',
                      command= lambda: savefile(result), state='disabled')
 mainmenu.add_command(label='Сохранить таблицу',
                      command= lambda: savetable(result), state='disabled')
+mainmenu.add_command(label='О программе', command= lambda: about.about())
 
 root.grid_columnconfigure(1, weight=1)
 root.grid_rowconfigure(1, weight=1)
