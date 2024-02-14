@@ -32,7 +32,14 @@ class ImagePIL:
                 y1 = line.y1
                 color = line.color
                 width = line.width
-
                 draw.line((x, y, x1, y1), fill=color, width=width)
+                if line.key_visible_length:
+                    x, y = line.middle()
+                    text = line.text_length
+                    text_color = line.text_color
+                    rect_color = line.rect_color
+                    width, height = draw.textsize(text)
+                    draw.rectangle((x, y, x+width, y+height), fill=rect_color)
+                    draw.text((x, y), text, fill=text_color, anchor='lt')
 
         savimage.save(newfile)

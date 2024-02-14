@@ -201,7 +201,7 @@ class Toolbar:
             self.label_info_len.configure(text=text)
 
     def get_multiplier(self):
-        pixels = int(self.entry_scale_pixels.get())
+        pixels = float(self.entry_scale_pixels.get())
         length = float(self.entry_scale_len.get())
         multiplier = length / pixels
         self.label_scale.configure(text=f'1 px = {multiplier:.4f}')
@@ -349,14 +349,16 @@ class Line:
         # видимость текста
         self.key_visible_length = False
         self.text_length = ''
+        self.text_color = 'white'
+        self.rect_color = 'black'
         # бронирую id для текста
         x, y = self.middle()
-        self.id_text = self.canvas.create_text(x, y, text='0', fill='white', tag='text')
+        self.id_text = self.canvas.create_text(x, y, text='0', fill=self.text_color, tag='text')
         # границы текста
-        bounds_text = self.canvas.bbox(self.id_text)
+        self.bounds_text = self.canvas.bbox(self.id_text)
         self.canvas.itemconfig(self.id_text, state='hidden')
         # бронирую id для рамки текста
-        self.id_rect = self.canvas.create_rectangle(*bounds_text, fill='black', tag='rect')
+        self.id_rect = self.canvas.create_rectangle(*self.bounds_text, fill=self.rect_color, tag='rect')
         self.canvas.itemconfig(self.id_rect, state='hidden')
 
     def middle(self):
