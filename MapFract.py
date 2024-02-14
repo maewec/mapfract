@@ -42,15 +42,32 @@ def loadfile():
             image_frame.reload_image()
             # разблокировка сохранения
             mainmenu.entryconfig('Сохранить изображение', state='normal')
+            mainmenu.entryconfig('Сохранить таблицу', state='normal')
         except Exception as e:
             mb.showerror('Ошибка', f'Не удалось открыть файл\n{e}')
 
-def savefile(image_frame):
+def savefile(result):
     ext = 'png'
     new_short_file_wo_ext = short_file_wo_ext + '_mod'
     new_name = new_short_file_wo_ext + '.' + ext
     newfile = os.path.join(path, new_name)
     img.savefile(newfile, result)
+
+def savetable(result):
+    ext = 'dat'
+    new_short_file_wo_ext = short_file_wo_ext + '_table'
+    new_name = new_short_file_wo_ext + '.' + ext
+    newfile = os.path.join(path, new_name)
+    list_result = result.list_result
+    with open(newfile, 'w') as src:
+        for res in list_result:
+            if res.var_visible.get():
+                ident = res.id
+                length = res.length
+                pixel = res.pixel
+                color = COLORS[res.color_id]
+                string = f'{ident}\t{length}\t{pixel}\t{color}\n'
+                src.write(string)
 
 
 class Toolbar:
@@ -421,6 +438,8 @@ root.config(menu=mainmenu)
 mainmenu.add_command(label='Открыть изображение', command=loadfile)
 mainmenu.add_command(label='Сохранить изображение',
                      command= lambda: savefile(result), state='disabled')
+mainmenu.add_command(label='Сохранить таблицу',
+                     command= lambda: savetable(result), state='disabled')
 
 root.grid_columnconfigure(1, weight=1)
 root.grid_rowconfigure(1, weight=1)
