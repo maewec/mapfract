@@ -41,28 +41,39 @@ def loadfile(result):
             # отображение изображения
             image_frame.reload_image()
             # разблокировка сохранения
-            mainmenu.entryconfig('Сохранить изображение', state='normal')
-            mainmenu.entryconfig('Сохранить таблицу', state='normal')
+            mainmenu.entryconfig('Сохранить результаты', state='normal')
             # очистка предыдущих результатов
             result.clean()
         except Exception as e:
             mb.showerror('Ошибка', f'Не удалось открыть файл\n{e}')
 
 def savefile(result):
-    ext = 'png'
-    new_short_file_wo_ext = short_file_wo_ext + '_mod'
-    new_name = new_short_file_wo_ext + '.' + ext
+    ext_pic = '.png'
+    ext_table = '.dat'
+    new_file_wo_ext = short_file_wo_ext + '_result'
+    new_name = new_file_wo_ext + ext_pic
     newfile = os.path.join(path, new_name)
-    img.savefile(newfile, result)
+    if os.path.exists(newfile):
+        for i in range(100):
+            new_name = new_file_wo_ext + '_' + str(i) + ext_pic
+            newfile = os.path.join(path, new_name)
+            if not os.path.exists(newfile):
+                img.savefile(newfile, result)
+                new_name_dat = new_file_wo_ext + '_' + str(i) + ext_table
+                newfile = os.path.join(path, new_name_dat)
+                savetable(newfile, result)
+                break
+    else:
+        img.savefile(newfile, result)
+        new_name_dat = new_file_wo_ext + ext_table
+        newfile = os.path.join(path, new_name_dat)
+        savetable(newfile, result)
 
-def savetable(result):
-    ext = 'dat'
-    new_short_file_wo_ext = short_file_wo_ext + '_table'
-    new_name = new_short_file_wo_ext + '.' + ext
-    newfile = os.path.join(path, new_name)
-    list_result = result.list_result
-    with open(newfile, 'w') as src:
-        for res in list_result:
+
+
+def savetable(path, result):
+    with open(path, 'w') as src:
+        for res in result.list_result:
             if res.var_visible.get():
                 ident = res.id
                 length = res.length
@@ -494,10 +505,8 @@ mainmenu = tk.Menu(root)
 root.config(menu=mainmenu)
 mainmenu.add_command(label='Открыть изображение',
                      command=lambda: loadfile(result))
-mainmenu.add_command(label='Сохранить изображение',
+mainmenu.add_command(label='Сохранить результаты',
                      command= lambda: savefile(result), state='disabled')
-mainmenu.add_command(label='Сохранить таблицу',
-                     command= lambda: savetable(result), state='disabled')
 mainmenu.add_command(label='О программе', command= lambda: about.about())
 
 root.grid_columnconfigure(1, weight=1)
