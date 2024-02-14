@@ -476,6 +476,8 @@ class Line:
         self.canvas.tag_raise('text')
         self.text_length = value
         self.key_visible_length = True
+        # если отображение линий выключено, то и длину выключить
+        self.visible(self.key_visible)
 
     def length_hidden(self):
         self.canvas.itemconfig(self.id_text, state='hidden')
