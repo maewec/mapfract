@@ -28,7 +28,7 @@ COLORS = ['#FF0000', '#00FF00', '#0000FF', '#000000', '#FFFFFF',
           '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
           '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
 
-def loadfile():
+def loadfile(result):
     file_name = fd.askopenfilename()
     global path, short_file_name, short_file_wo_ext
     if os.path.isfile(file_name):
@@ -43,6 +43,8 @@ def loadfile():
             # разблокировка сохранения
             mainmenu.entryconfig('Сохранить изображение', state='normal')
             mainmenu.entryconfig('Сохранить таблицу', state='normal')
+            # очистка предыдущих результатов
+            result.clean()
         except Exception as e:
             mb.showerror('Ошибка', f'Не удалось открыть файл\n{e}')
 
@@ -124,7 +126,7 @@ class Toolbar:
         self.button_scale_pixels.bind('<Button-1>',
                                       lambda event: self.measure('scale'))
         self.button_scale_pixels.grid(row=2, column=0, columnspan=2,
-                                      sticky='nwe')
+                                      sticky='nwe', padx=padx, pady=pady)
         # вывод перевода пикселей в длину
         self.label_scale = tk.Label(self.frame_scale, anchor='w')
         self.label_scale.grid(row=3, column=0, columnspan=2)
@@ -137,7 +139,15 @@ class Toolbar:
         self.button_measure_line = tk.Button(self.frame_measure, text='Измерить длину')
         self.button_measure_line.bind('<Button-1>',
                                       lambda event: self.measure('draw_distance'))
-        self.button_measure_line.grid(row=0, column=0, sticky='nw')
+        self.button_measure_line.grid(row=0, column=0, sticky='nw', padx=padx, pady=pady)
+        #
+        # Фрейм настроек
+        self.frame_setting = tk.LabelFrame(self.frame, text='Настройки')
+        self.frame_setting.grid(row=0, column=3, sticky='nsw',
+                                padx=padx, pady=pady)
+        self.button_clean = tk.Button(self.frame_setting, text='Очистить')
+        self.button_clean.bind('<Button-1>', lambda event: result.clean())
+        self.button_clean.grid(row=0, column=0, sticky='nw', padx=padx, pady=pady)
 
     def info_coord(self, event):
         # при скроллинге канваса правильное отображение координат
@@ -283,6 +293,11 @@ class ResultFrame:
         res.draw()
         self.list_result.append(res)
         self.update_canvas()
+
+    def clean(self):
+        # copy() чтобы во время обхода списка не изменялись его элементы
+        for res in self.list_result.copy():
+            res.delete()
 
     def update_canvas(self):
         self.frame_result.update()
@@ -475,7 +490,8 @@ toolbar     =     Toolbar(root, 0, 0, columnspan=2,
 
 mainmenu = tk.Menu(root)
 root.config(menu=mainmenu)
-mainmenu.add_command(label='Открыть изображение', command=loadfile)
+mainmenu.add_command(label='Открыть изображение',
+                     command=lambda: loadfile(result))
 mainmenu.add_command(label='Сохранить изображение',
                      command= lambda: savefile(result), state='disabled')
 mainmenu.add_command(label='Сохранить таблицу',
