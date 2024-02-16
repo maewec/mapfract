@@ -23,6 +23,8 @@ else:
     pass
 
 global img
+global global_color_id
+global_color_id = 0
 
 COLORS = ['#FF0000', '#00FF00', '#0000FF', '#000000', '#FFFFFF',
           '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
@@ -180,7 +182,7 @@ class Toolbar:
             y = self.imgf.canv.canvasy(event.y)
             self.list_points_measure.append([x, y])
             # создание линии
-            self.line = Line(self.imgf.canv, x, y, color_id=0, width=3)
+            self.line = Line(self.imgf.canv, x, y, color_id=global_color_id, width=3)
             self.canv_bind_line = self.imgf.canv.bind('<Motion>',
                         lambda event: self.draw_line(event, x, y, type_measure),
                                      add=True)
@@ -286,6 +288,7 @@ class ResultFrame:
         self.list_result = []
         self.view_length_var_all = tk.StringVar(value=self.view_length[0])
         self.var_visible_all = tk.BooleanVar()
+        self.color_dialog_all = color_panel.SelectColor(COLORS)
         self.frame = tk.Frame(master)
         self.frame.grid(row=row, column=column, sticky='nw',
                         padx=3, pady=3)
@@ -332,7 +335,7 @@ class ResultFrame:
         # Цвет
         self.label_color_all = tk.Label(self.row, width=2, background=COLORS[0])
         self.label_color_all.grid(row=0, column=4, padx=padx)
-        self.label_color_all.bind('<Button-1>', lambda event: self.set_color())
+        self.label_color_all.bind('<Button-1>', lambda event: self.set_color_all(event))
         # Отображение размера на полотне
         self.combobox_length_all = ttk.Combobox(self.row, textvariable=self.view_length_var_all,
                 values=self.view_length, width=4, state='readonly')
@@ -356,8 +359,13 @@ class ResultFrame:
             res.var_visible.set(key)
             res.visible()
 
-    def set_color(self):
-        pass
+    def set_color_all(self, event):
+        global global_color_id
+        self.color_dialog_all.dialog_color(event=event)
+        global_color_id = self.color_dialog_all.get_color_id()
+        self.label_color_all.configure(background=COLORS[global_color_id])
+        for res in self.list_result:
+            res.set_color(global_color_id)
 
     def visible_length_all(self):
         key = self.view_length_var_all.get()
@@ -396,9 +404,8 @@ class MeasureFrame:
         self.pixel = pixel
         self.line = line
         self.master = master
-        self.color_id = 0
+        self.color_id = global_color_id
         self.obj_resultframe = obj_resultframe
-        self.color_var = tk.StringVar(value=COLORS[self.color_id])
         self.view_length = self.obj_resultframe.view_length
         self.view_length_var = tk.StringVar(value=self.obj_resultframe.view_length_var_all.get())
         self.var_visible = tk.BooleanVar()
@@ -429,7 +436,7 @@ class MeasureFrame:
         # Цвет
         self.label_color = tk.Label(self.row, width=2, background=COLORS[self.color_id])
         self.label_color.grid(row=0, column=4, padx=padx)
-        self.label_color.bind('<Button-1>', lambda event: color_panel.SelectColor(COLORS, self, event))
+        self.label_color.bind('<Button-1>', lambda event: self.color_dialog_and_set(event))
         # Отображение размера на полотне
         self.combobox_length = ttk.Combobox(self.row, textvariable=self.view_length_var,
                 values=self.view_length, width=4, state='readonly')
@@ -445,10 +452,17 @@ class MeasureFrame:
         # отрисовываю текст на линии при включенной настройке
         self.visible_length()
 
-    def select_color(self, color_id):
+    def color_dialog_and_set(self, event):
+        """Запуск диалога выбора цвета и его применение"""
+        color_dialog = color_panel.SelectColor(COLORS)
+        color_dialog.dialog_color(event=event)
+        self.color_id = color_dialog.get_color_id()
+        self.set_color(self.color_id)
+
+    def set_color(self, color_id):
         self.color_id = color_id
         self.label_color.configure(background=COLORS[self.color_id])
-        self.line.set_color(color_id)
+        self.line.set_color(self.color_id)
 
     def visible(self):
         self.line.visible(self.var_visible.get())
