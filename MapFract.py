@@ -11,7 +11,7 @@ from PIL import ImageTk
 
 import image, color_panel, about
 
-__version__ = '1.0'
+__version__ = '1.1'
 title_name = 'Map Fracture' + ' ' + __version__
 
 root = tk. Tk()
@@ -26,6 +26,8 @@ except:
     pass
 
 global img
+global global_color_id
+global_color_id = 0
 
 COLORS = ['#FF0000', '#00FF00', '#0000FF', '#000000', '#FFFFFF',
           '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
@@ -76,13 +78,16 @@ def savefile(result):
 
 def savetable(path, result):
     with open(path, 'w') as src:
+        headline = 'id\tlength\tcomment\tpx\tcolor\n'
+        src.write(headline)
         for res in result.list_result:
             if res.var_visible.get():
                 ident = res.id
                 length = res.length
                 pixel = res.pixel
                 color = COLORS[res.color_id]
-                string = f'{ident}\t{length}\t{pixel}\t{color}\n'
+                text = res.text_comment.get()
+                string = f'{ident}\t{length}\t{text}\t{pixel}\t{color}\n'
                 src.write(string)
 
 
@@ -150,7 +155,7 @@ class Toolbar:
         self.frame_measure = tk.LabelFrame(self.frame, text='Измерения')
         self.frame_measure.grid(row=0, column=2, sticky='nsw',
                               padx=padx, pady=pady)
-        self.button_measure_line = tk.Button(self.frame_measure, text='Измерить длину')
+        self.button_measure_line = tk.Button(self.frame_measure, text='Измерить длину <A>')
         self.button_measure_line.bind('<Button-1>',
                                       lambda event: self.measure('draw_distance'))
         self.button_measure_line.grid(row=0, column=0, sticky='nw', padx=padx, pady=pady)
@@ -180,7 +185,7 @@ class Toolbar:
             y = self.imgf.canv.canvasy(event.y)
             self.list_points_measure.append([x, y])
             # создание линии
-            self.line = Line(self.imgf.canv, x, y, color_id=0, width=3)
+            self.line = Line(self.imgf.canv, x, y, color_id=global_color_id, width=3)
             self.canv_bind_line = self.imgf.canv.bind('<Motion>',
                         lambda event: self.draw_line(event, x, y, type_measure),
                                      add=True)
@@ -284,14 +289,17 @@ class ResultFrame:
     def __init__(self, master, row, column):
         # список всех фреймов с результатами
         self.list_result = []
+        self.view_length_var_all = tk.StringVar(value=self.view_length[0])
+        self.var_visible_all = tk.BooleanVar()
+        self.color_dialog_all = color_panel.SelectColor(COLORS)
         self.frame = tk.Frame(master)
         self.frame.grid(row=row, column=column, sticky='nw',
                         padx=3, pady=3)
-        self.width = 279
+        self.width = 351
         self.height = 45
         # добавляю канвас, чтобы потом можно было реализовать прокрутку
         self.canvas_result = tk.Canvas(self.frame)
-        self.canvas_result.grid(row=0, column=0, sticky='nw')
+        self.canvas_result.grid(row=0, column=0, sticky='nswe')
         self.canvas_result.configure(width=self.width)
         self.canvas_result.configure(height=self.height)
         self.vscroll = tk.Scrollbar(self.frame, orient='vertical',
@@ -301,6 +309,72 @@ class ResultFrame:
 
         self.frame_result = tk.LabelFrame(self.canvas_result, text='Результаты')
         self.canvas_result.create_window((0,0), window=self.frame_result, anchor='nw')
+        self.create_headline()
+
+    def create_headline(self):
+        # Заголовок
+        padx = 1
+        self.row = tk.Frame(self.frame_result)
+        self.row.grid(row=0, column=0)
+        # номер
+        self.label_num = tk.Label(self.row, width=2, text='№')
+        self.label_num.grid(row=0, column=0, padx=padx)
+        # Чекбокс видимости
+        self.var_visible_all.set(True)
+        self.check_visible_all = tk.Checkbutton(self.row, text='',
+                variable=self.var_visible_all, onvalue=True, offvalue=False,
+                command=self.visible_all)
+        self.check_visible_all.grid(row=0, column=1, padx=padx)
+        # Текст с длиной
+        self.text_length_all = tk.Text(self.row, width=10, height=1, wrap='none', bg='#f0f0f0')
+        self.text_length_all.grid(row=0, column=2, padx=padx)
+        self.text_length_all.insert(1.0, 'Длина')
+        self.text_length_all.configure(state='disabled')
+        # Текст с пикселями
+        self.text_px_all = tk.Text(self.row, width=5, height=1, wrap='none', bg='#f0f0f0')
+        self.text_px_all.grid(row=0, column=3, padx=padx)
+        self.text_px_all.insert(1.0, 'px')
+        self.text_px_all.configure(state='disabled')
+        # Цвет
+        self.label_color_all = tk.Label(self.row, width=2, background=COLORS[0])
+        self.label_color_all.grid(row=0, column=4, padx=padx)
+        self.label_color_all.bind('<Button-1>', lambda event: self.set_color_all(event))
+        # Отображение размера на полотне
+        self.combobox_length_all = ttk.Combobox(self.row, textvariable=self.view_length_var_all,
+                values=self.view_length, width=4, state='readonly')
+        self.combobox_length_all.grid(row=0, column=5, padx=padx)
+        self.combobox_length_all.bind('<<ComboboxSelected>>', lambda event: self.visible_length_all())
+        # Комментарий
+        self.text_comment_all = tk.Entry(self.row, width=10, bg='#f0f0f0', fg='#000000')
+        self.text_comment_all.grid(row=0, column=6, padx=padx)
+        self.text_comment_all.insert(1, 'Коммент.')
+        self.text_comment_all.configure(state='readonly')
+        # Удаление измерения
+        self.button_delete_all = tk.Button(self.row, text='D', width=2)
+        self.button_delete_all.grid(row=0, column=7, padx=padx)
+        self.button_delete_all.bind('<Button-1>', lambda event: self.clean())
+
+    view_length = ['Длина', 'id', 'px', 'Нет']
+
+    def visible_all(self):
+        key = self.var_visible_all.get()
+        for res in self.list_result:
+            res.var_visible.set(key)
+            res.visible()
+
+    def set_color_all(self, event):
+        global global_color_id
+        self.color_dialog_all.dialog_color(event=event)
+        global_color_id = self.color_dialog_all.get_color_id()
+        self.label_color_all.configure(background=COLORS[global_color_id])
+        for res in self.list_result:
+            res.set_color(global_color_id)
+
+    def visible_length_all(self):
+        key = self.view_length_var_all.get()
+        for res in self.list_result:
+            res.combobox_length.set(key)
+            res.visible_length()
 
     def add_result(self, length, pixel, line):
         res = MeasureFrame(length, pixel, line, self.frame_result, self)
@@ -312,6 +386,7 @@ class ResultFrame:
         # copy() чтобы во время обхода списка не изменялись его элементы
         for res in self.list_result.copy():
             res.delete()
+        MeasureFrame.count = 1
 
     def update_canvas(self):
         self.frame_result.update()
@@ -320,6 +395,7 @@ class ResultFrame:
         self.canvas_result.configure(height=self.height)
         self.canvas_result.configure(width=self.width)
         self.canvas_result.configure(scrollregion=(0, 0, self.width, self.height))
+        #print(self.width, self.height)
 
 
 class MeasureFrame:
@@ -331,15 +407,11 @@ class MeasureFrame:
         self.pixel = pixel
         self.line = line
         self.master = master
-        self.color_id = 0
-        self.color_var = tk.StringVar(value=COLORS[self.color_id])
-        self.view_length_var = tk.StringVar(value=self.view_length[0])
-        self.var_visible = tk.BooleanVar()
+        self.color_id = global_color_id
         self.obj_resultframe = obj_resultframe
-        # рисую на линии ее длину
-        self.line.visible_length('{:.4f}'.format(self.length))
-
-    view_length = ['Длина', 'id', 'px', 'Нет']
+        self.view_length = self.obj_resultframe.view_length
+        self.view_length_var = tk.StringVar(value=self.obj_resultframe.view_length_var_all.get())
+        self.var_visible = tk.BooleanVar()
 
     def draw(self):
         padx = 1
@@ -367,21 +439,33 @@ class MeasureFrame:
         # Цвет
         self.label_color = tk.Label(self.row, width=2, background=COLORS[self.color_id])
         self.label_color.grid(row=0, column=4, padx=padx)
-        self.label_color.bind('<Button-1>', lambda event: color_panel.SelectColor(COLORS, self, event))
+        self.label_color.bind('<Button-1>', lambda event: self.color_dialog_and_set(event))
         # Отображение размера на полотне
         self.combobox_length = ttk.Combobox(self.row, textvariable=self.view_length_var,
                 values=self.view_length, width=4, state='readonly')
         self.combobox_length.grid(row=0, column=5, padx=padx)
         self.combobox_length.bind('<<ComboboxSelected>>', lambda event: self.visible_length())
+        # Комментарий
+        self.text_comment = tk.Entry(self.row, width=10)
+        self.text_comment.grid(row=0, column=6, padx=padx)
         # Удаление измерения
-        self.button_delete = tk.Button(self.row, text='X')
-        self.button_delete.grid(row=0, column=6, padx=padx)
+        self.button_delete = tk.Button(self.row, text='X', width=2)
+        self.button_delete.grid(row=0, column=7, padx=padx)
         self.button_delete.bind('<Button-1>', lambda event: self.delete())
+        # отрисовываю текст на линии при включенной настройке
+        self.visible_length()
 
-    def select_color(self, color_id):
+    def color_dialog_and_set(self, event):
+        """Запуск диалога выбора цвета и его применение"""
+        color_dialog = color_panel.SelectColor(COLORS)
+        color_dialog.dialog_color(event=event)
+        self.color_id = color_dialog.get_color_id()
+        self.set_color(self.color_id)
+
+    def set_color(self, color_id):
         self.color_id = color_id
         self.label_color.configure(background=COLORS[self.color_id])
-        self.line.set_color(color_id)
+        self.line.set_color(self.color_id)
 
     def visible(self):
         self.line.visible(self.var_visible.get())
@@ -514,5 +598,8 @@ mainmenu.add_command(label='О программе', command= lambda: about.about
 
 root.grid_columnconfigure(1, weight=1)
 root.grid_rowconfigure(1, weight=1)
+
+# горячие клавиши
+root.bind('<a>', lambda event: toolbar.measure('draw_distance'))
 
 root.mainloop()
