@@ -17,13 +17,8 @@ title_name = 'Map Fracture' + ' ' + __version__
 root = tk. Tk()
 root.title(title_name)
 
-try:
-    base_path = sys._MEIPASS
-    print(base_path)
-    full_path = os.path.join(base_path, 'data_file', 'mapfract.ico')
-    root.iconbitmap(full_path)
-except:
-    pass
+full_path='mapfract.ico'
+root.iconbitmap(full_path)
 
 global img
 global global_color_id
